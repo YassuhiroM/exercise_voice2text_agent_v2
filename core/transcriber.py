@@ -50,7 +50,7 @@ class Transcriber:
             str(audio_file),
             beam_size=5,
             vad_filter=True,
-            initial_prompt="English, Spanish, Spanglish." 
+            initial_prompt="English, Spanish, Portuguese." 
         )
 
         text = " ".join(s.text.strip() for s in segments if s.text.strip())
