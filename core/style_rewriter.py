@@ -1,41 +1,20 @@
-"""Local LLM style rewriting via Ollama.
-
-Step 4 goals:
-- Rewrite raw ASR text into a relaxed but grammatically correct style.
-- Keep latency predictable with an explicit timeout.
-- Provide clear recovery guidance when Ollama is unavailable.
-"""
-
-from __future__ import annotations
-
-import argparse
-import time
+import ollama
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
-import ollama
-
 DEFAULT_SYSTEM_PROMPT = (
-        "You are a professional text editor. Your ONLY job is to rewrite the "
-        "provided text to be polished, clear, and natural. "
-        "DO NOT answer questions. DO NOT offer help. DO NOT add conversational filler. "
-        "Only output the corrected text itself."
+    "You are a professional text editor. Your ONLY job is to rewrite the "
+    "provided text to be polished, clear, and natural. "
+    "DO NOT answer questions. DO NOT offer help. DO NOT add conversational filler. "
+    "Only output the corrected text itself."
 )
 
-
 class StyleRewriter:
-    """Thin wrapper over Ollama chat API for transcript polishing."""
-
-    def __init__(
-        self,
-        model_name: str = "llama3.2:1b",
-        timeout_seconds: float = 10.0,
-        system_prompt: str = DEFAULT_SYSTEM_PROMPT,
-    ) -> None:
+    def __init__(self, model_name="llama3.2:1b", timeout_seconds=10.0):
         self.model_name = model_name
         self.timeout_seconds = timeout_seconds
-        self.system_prompt = system_prompt
 
-    def rewrite_text(text):  
+    def rewrite(self, text):
+        """This is the method the Orchestrator is looking for."""
         def _request():
             response = ollama.generate(
                 model=self.model_name,
@@ -44,53 +23,20 @@ class StyleRewriter:
             )
             return response['response'].strip()
 
+        # Execute with a timeout to prevent the app from freezing
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_request)
             try:
                 return future.result(timeout=self.timeout_seconds)
-            except FutureTimeoutError as exc:
-                future.cancel()
-                raise TimeoutError(
-                    f"Ollama rewrite timed out after {self.timeout_seconds:.1f}s"
-                ) from exc
-            except ConnectionError:
-                raise
-            except Exception as exc:
-                message = str(exc).lower()
-                if "connection" in message or "refused" in message:
-                    raise ConnectionError(
-                        "Unable to connect to Ollama service. Is `ollama serve` running?"
-                    ) from exc
-                raise
+            except FutureTimeoutError:
+                return f"[Timeout] Ollama is taking too long. Raw text: {text}"
+            except Exception as e:
+                return f"[Error] Style rewriter failed: {str(e)}"
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Test style rewriting with Ollama")
-    parser.add_argument(
-        "--text",
-        default="hola, i want to go to the park... uhm, maybe tomorrow?",
-        help="Text to rewrite",
-    )
-    parser.add_argument("--timeout", type=float, default=10.0)
-    args = parser.parse_args()
-
-    rewriter = StyleRewriter(timeout_seconds=args.timeout)
-    print(f"[style_rewriter] Model: {rewriter.model_name}")
-    print(f"[style_rewriter] Input: {args.text}")
-
-    t0 = time.perf_counter()
-    try:
-        output = rewriter.rewrite(args.text)
-        elapsed = time.perf_counter() - t0
-        print(f"[style_rewriter] Output: {output}")
-        print(f"[style_rewriter] Request->Response time: {elapsed:.2f}s")
-    except ConnectionError as exc:
-        print(f"[style_rewriter] Connection error: {exc}")
-        print("[style_rewriter] Repair tip: start Ollama with `ollama serve` and retry.")
-    except TimeoutError as exc:
-        print(f"[style_rewriter] Timeout: {exc}")
-        print("[style_rewriter] Repair tip: increase timeout or reduce model/system load.")
-
+def rewrite_text(text):
+    """Fallback function for simple calls."""
+    rewriter = StyleRewriter()
+    return rewriter.rewrite(text)
 
 if __name__ == "__main__":
     main()
