@@ -35,14 +35,14 @@ class StyleRewriter:
         self.timeout_seconds = timeout_seconds
         self.system_prompt = system_prompt
 
-def rewrite_text(text):  
-    response = ollama.generate(
-        model='llama3.2:1b',
-        system=DEFAULT_SYSTEM_PROMPT,
-        prompt=f"Polish this text: {text}"
-    )
-    
-    return response['response'].strip()
+    def rewrite_text(text):  
+        def _request():
+            response = ollama.generate(
+                model=self.model_name,
+                system=DEFAULT_SYSTEM_PROMPT,
+                prompt=f"Polish this text: {text}"
+            )
+            return response['response'].strip()
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_request)
