@@ -15,9 +15,10 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 import ollama
 
 DEFAULT_SYSTEM_PROMPT = (
-    "You are a writing assistant. Rewrite the following text to be slightly relaxed, "
-    "but grammatically perfect. Do not add explanations, only "
-    "return the corrected text."
+        "You are a professional text editor. Your ONLY job is to rewrite the "
+        "provided text to be polished, clear, and natural. "
+        "DO NOT answer questions. DO NOT offer help. DO NOT add conversational filler. "
+        "Only output the corrected text itself."
 )
 
 
