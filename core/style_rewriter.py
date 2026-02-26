@@ -35,18 +35,10 @@ class StyleRewriter:
         self.timeout_seconds = timeout_seconds
         self.system_prompt = system_prompt
 
-def rewrite_text(text):
-    # The System Prompt is the "Brain" of the operation
-    system_prompt = (
-        "You are a professional text editor. Your ONLY job is to rewrite the "
-        "provided text to be polished, clear, and natural. "
-        "DO NOT answer questions. DO NOT offer help. DO NOT add conversational filler. "
-        "Only output the corrected text itself."
-    )
-    
+def rewrite_text(text):  
     response = ollama.generate(
         model='llama3.2:1b',
-        system=system_prompt,
+        system=DEFAULT_SYSTEM_PROMPT,
         prompt=f"Polish this text: {text}"
     )
     
