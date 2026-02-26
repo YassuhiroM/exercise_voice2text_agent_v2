@@ -34,28 +34,22 @@ class StyleRewriter:
         self.timeout_seconds = timeout_seconds
         self.system_prompt = system_prompt
 
-    def rewrite(self, text: str) -> str:
-        """Rewrite text using local Ollama model.
-
-        Raises:
-            ValueError: If text is empty.
-            ConnectionError: If Ollama service is unavailable.
-            TimeoutError: If response exceeds configured timeout.
-        """
-        cleaned = text.strip()
-        if not cleaned:
-            raise ValueError("Input text is empty.")
-
-        def _request() -> str:
-            response = ollama.chat(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": cleaned},
-                ],
-                options={"temperature": 0.2},
-            )
-            return response["message"]["content"].strip()
+def rewrite_text(text):
+    # The System Prompt is the "Brain" of the operation
+    system_prompt = (
+        "You are a professional text editor. Your ONLY job is to rewrite the "
+        "provided text to be polished, clear, and natural. "
+        "DO NOT answer questions. DO NOT offer help. DO NOT add conversational filler. "
+        "Only output the corrected text itself."
+    )
+    
+    response = ollama.generate(
+        model='llama3.2:1b',
+        system=system_prompt,
+        prompt=f"Polish this text: {text}"
+    )
+    
+    return response['response'].strip()
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_request)
