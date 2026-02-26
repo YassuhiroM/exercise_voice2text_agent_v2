@@ -23,7 +23,8 @@ class Recorder:
         
         # --- IMPROVEMENT: SILENCE TIMEOUT ---
         self.last_speech_time = 0
-        self.SILENCE_THRESHOLD = 500  # Adjust if it auto-stops too easily
+        self.SILENCE_THRESHOLD = 800  # Previous wsa 500
+        self.TIMEOUT_LIMIT = 5.0  # 5 seconds
 
     @property
     def is_recording(self) -> bool:
