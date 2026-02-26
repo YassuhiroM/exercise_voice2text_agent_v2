@@ -33,7 +33,7 @@ class Recorder:
 
         # --- SILENCE TIMEOUT SETTINGS ---
         self.last_speech_time = 0.0
-        self.SILENCE_THRESHOLD = 800  # Higher value ignores more background noise
+        self.SILENCE_THRESHOLD = 500  # Higher value ignores more background noise
         self.TIMEOUT_LIMIT = 5.0      # 5 seconds of silence to auto-stop
 
     @property
