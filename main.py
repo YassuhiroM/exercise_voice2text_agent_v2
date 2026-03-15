@@ -43,10 +43,11 @@ Controls:
 """
 
 def main():
+    print(STARTUP_HELP)
     orchestrator = VoiceFlowOrchestrator()
     controller = GlobalHotkeyController(orchestrator)
     #print("Agent Active. CTRL+ALT+SPACE to Record | ESC to Exit")
-    print(STARTUP_HELP)
+
     with keyboard.Listener(on_press=controller.on_press, on_release=controller.on_release) as listener:
         listener.join()
 
