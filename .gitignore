@@ -1,0 +1,4 @@
+venv_ucm_voice2text_python311/
+__pycache__/
+*.pyc
+.DS_Store
