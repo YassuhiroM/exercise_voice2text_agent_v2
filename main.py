@@ -3,6 +3,7 @@
 import os
 from pynput import keyboard
 from core.orchestrator import VoiceFlowOrchestrator
+import threading
 
 class GlobalHotkeyController:
     def __init__(self, orchestrator: VoiceFlowOrchestrator) -> None:
@@ -11,17 +12,19 @@ class GlobalHotkeyController:
         self._combo_down = False
 
     def on_press(self, key):
-        # ESC to Exit
+        # ESC to Exit (clean stop)
         if key == keyboard.Key.esc:
-            print("\n🛑 Closing application...")
-            os._exit(0)
-
+            print("\n[EXIT] Closing application...")
+            return False  # stops listener per pynput docs
+    
         self._pressed.add(key)
-        # Simple check for CTRL+ALT+SPACE
+    
+        # CTRL+ALT+SPACE combo (left keys only; you can extend to right keys later)
         if all(k in self._pressed for k in [keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.Key.space]):
             if not self._combo_down:
                 self._combo_down = True
-                self.orchestrator.toggle()
+                # IMPORTANT: don't do long work in the callback thread
+                threading.Thread(target=self.orchestrator.toggle, daemon=True).start()
 
     def on_release(self, key):
         self._pressed.discard(key)
