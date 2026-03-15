@@ -6,7 +6,7 @@ from pynput import keyboard
 from core.orchestrator import VoiceFlowOrchestrator
 
 # If run_agent.bat already prints instructions, set this to False
-SHOW_STARTUP_HELP = True
+SHOW_STARTUP_HELP = False
 HOTKEY_LABEL = "CTRL + ALT + SPACE"
 
 STARTUP_HELP = f"""\
