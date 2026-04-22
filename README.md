@@ -1,110 +1,101 @@
-# exercise_voice2text_agent_external_model
+# exercise_voice2text_agent_v2
 
-A local voice-to-text desktop agent for Windows that captures speech with a global hotkey, transcribes audio, rewrites the text with an external language model or Hugging Face model, and pastes the final result into the active window.
+A local voice-to-text desktop agent for Windows that captures speech with a global hotkey, transcribes audio with `faster-whisper`, rewrites the text with a configurable external model (Hugging Face or OpenAI), and pastes the final result into the active window.
+
+---
 
 ## Overview
 
-This project is based on the original `exercise_voice2text_agent_gem` app, but replaces the local rewriting component with a configurable external model provider.
+This project evolved from `exercise_voice2text_agent_gem` (which used a local Ollama model for rewriting) and replaces that component with a configurable external provider.
 
-The goal is to preserve the same workflow:
+The workflow is the same:
 
-1. Press a hotkey to start recording
-2. Capture audio locally
-3. Transcribe speech to text
-4. Rewrite / correct the transcription with a configurable model
-5. Paste the result into the active application
+1. Hold **Ctrl+Alt+Space** to start recording
+2. Release to stop (or auto-stop after 5 s of silence)
+3. Transcribe speech to text locally via `faster-whisper`
+4. Rewrite / grammar-correct with a configurable model
+5. Paste the result into the active application via `Ctrl+V`
 
-## Main goals
+---
 
-- Keep the same user experience as the original app
-- Allow configurable rewriting providers
-- Support either:
-  - an external LLM API
-  - a Hugging Face model
-- Maintain a simple, local-first architecture
-- Keep setup understandable for non-expert developers
+## Hardware & Environment
 
-## Features
+- **CPU:** AMD Ryzen 5 7520U
+- **RAM:** 8 GB — sequential processing keeps peak RAM low
+- **Python:** 3.11
 
-- Global hotkey-based voice capture
-- Local audio recording
-- Speech-to-text transcription
-- Pluggable text rewriting provider
-- Automatic paste into the active window
-- Environment-based configuration
-- Designed for lightweight Windows usage
+---
 
 ## Architecture
 
-The app follows a sequential pipeline:
+```
+Record → Transcribe → Rewrite → Paste
+```
 
-`Record -> Transcribe -> Rewrite -> Paste`
-
-This keeps the flow simple and reduces resource usage.
+Processing is fully sequential to minimise memory usage on low-RAM machines.
 
 ### Components
 
-- **Recorder**: captures microphone audio
-- **Transcriber**: converts speech to raw text
-- **Rewriter**: improves grammar, punctuation, and readability
-- **Paster**: inserts final text into the active window
-- **Orchestrator**: coordinates the full process
+| Module | Role |
+|---|---|
+| `main.py` | Entry point; global hotkey listener (Ctrl+Alt+Space / ESC) |
+| `core/orchestrator.py` | Coordinates the full pipeline; handles push-to-talk + auto-stop |
+| `core/audio_handler.py` | PyAudio recorder with silence-detection auto-stop |
+| `core/transcriber.py` | `faster-whisper` ASR (CPU, int8, Spanish by default) |
+| `core/external_rewriter.py` | Grammar correction via Hugging Face mT5 or OpenAI |
+| `core/clipboard_paster.py` | Copies text to clipboard and sends Ctrl+V |
 
-## Project structure
+---
+
+## Project Structure
 
 ```text
-exercise_voice2text_agent_external_model/
+exercise_voice2text_agent_v2/
 ├── core/
-│   ├── recorder.py
-│   ├── transcriber.py
-│   ├── rewriter.py
-│   ├── paster.py
-│   └── orchestrator.py
-├── providers/
-│   ├── openai_rewriter.py
-│   └── huggingface_rewriter.py
+│   ├── __init__.py
+│   ├── audio_handler.py
+│   ├── clipboard_paster.py
+│   ├── external_rewriter.py
+│   ├── orchestrator.py
+│   └── transcriber.py
 ├── main.py
 ├── requirements.txt
 ├── .env.example
 └── README.md
-
-
-
-
-
-#################
-# OLDER VERSION #
-#################
-
-# VoiceFlow Clone (Windows 11) — Voice-to-Text Agent v2 (Local + External)
-
-## 🛠 Project Overview
-A local, privacy-focused automation agent. It captures voice via a global hotkey, transcribes bilingual speech (EN/ES), styles it via Ollama, and auto-pastes it into the active window.
-
-### Hardware & Environment
-* **CPU:** AMD Ryzen 5 7520U
-* **RAM:** 8.00 GB (7.28 GB usable) — **Optimized with Sequential Processing.**
-* **Python:** 3.11.9 (Stable for AI libraries)
+```
 
 ---
 
-## 🏗 System Architecture (Memory Safety)
-To prevent system lag, the agent executes tasks sequentially:
-1. **Record:** 16kHz Mono audio streamed to disk (~320KB per 10s).
-2. **Transcribe:** `faster-whisper` (tiny/int8) processed on CPU.
-3. **Style:** Local Hugging-Face's `multilingual mT5‑small model` for grammar correction, cost‑free usage; External option the low‑cost model `GPT‑4.1 Nano`
-4. **Paste:** `pyautogui` injection into active cursor.
+## Configuration
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```env
+REWRITER_PROVIDER=huggingface     # or "openai"
+OPENAI_API_KEY=your-openai-key    # only needed when using openai
+HF_MODEL_NAME=dreuxx26/Multilingual-grammar-Corrector-using-mT5-small
+OPENAI_MODEL=gpt-4.1-nano         # or gpt-4o-mini
+```
 
 ---
 
-## 📁 Project Structure
-```text
-exercise_voice2text_agent_gem/
-├── core/
-│   ├── transcriber.py      # DONE: Whisper-tiny integration
-│   ├── style_rewriter.py   # DONE: 
-│   └── clipboard_paster.py # DONE: Automation logic
-├── audio_handler.py        # DONE: PyAudio recording logic
-├── main.py                 # DONE: Orchestrator & Hotkey Listener
-├── requirements.txt        # DONE: Verified dependencies
-└── README.md               # DONE: Final Documentation
+## Setup
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+---
+
+## Run
+
+```bash
+python main.py
+```
+
+- Hold **Ctrl+Alt+Space** → recording starts
+- Release any of those keys → recording stops, pipeline runs, text is pasted
+- Recording also auto-stops after **5 seconds of silence**
+- Press **ESC** to exit

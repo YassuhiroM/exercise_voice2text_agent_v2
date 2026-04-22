@@ -2,6 +2,9 @@
 
 import threading
 from pynput import keyboard
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from core.orchestrator import VoiceFlowOrchestrator
 

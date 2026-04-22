@@ -23,8 +23,7 @@ from pathlib import Path
 
 from core.audio_handler import Recorder
 from core.clipboard_paster import Paster
-# from core.style_rewriter import StyleRewriter (included in 04/22/26)
-from core.external_rewriter import ExternalRewriter # new in 04/22/26
+from core.external_rewriter import ExternalRewriter
 from core.transcriber import Transcriber
 
 
@@ -57,8 +56,7 @@ class VoiceFlowOrchestrator:
     def __init__(self) -> None:
         self.recorder = Recorder()
         self.transcriber = Transcriber(keep_model_loaded=False)
-        #self.rewriter = StyleRewriter(model_name="llama3.2:1b", timeout_seconds=10.0) 
-        self.rewriter = ExternalRewriter(timeout_seconds=10.0) # new in 04/22/26
+        self.rewriter = ExternalRewriter(timeout_seconds=10.0)
         self.paster = Paster(paste_delay_seconds=0.1)
 
         # ---- state / concurrency guards ----
@@ -178,7 +176,7 @@ class VoiceFlowOrchestrator:
                 print("[STYLING] Skipping rewrite (text too short).")
                 final_text = raw_text
             else:
-                print("[STYLING] Refining text with Ollama...")
+                print("[STYLING] Refining text...")
                 try:
                     final_text = (self.rewriter.rewrite(raw_text) or "").strip()
                 except (ConnectionError, TimeoutError) as exc:
