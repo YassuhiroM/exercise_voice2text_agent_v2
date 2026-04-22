@@ -1,6 +1,15 @@
+# Virtual environments
 venv_ucm_voice2text_python311/
+.venv/
+
+# Python cache
 __pycache__/
 *.pyc
-.DS_Store.venv/
-.venv/
-.env # new in 04/22/26
+
+# OS files
+.DS_Store
+
+# Local secrets
+.env
+.env.*
+!.env.example
