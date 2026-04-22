@@ -20,8 +20,13 @@ echo.
 echo [1/3] Unlocking PowerShell Execution Policy...
 powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process"
 
-echo [2/3] Activating Python 3.11 Environment...
-call venv_ucm_voice2text_python311\Scripts\activate.bat
+echo [2/3] Activating Python Environment...
+IF NOT EXIST ".venv\Scripts\activate.bat" (
+  echo [ERROR] Virtual environment not found. Run update_app.bat first to set it up.
+  pause
+  exit /b 1
+)
+call .venv\Scripts\activate.bat
 
 echo [3/3] Launching Agent...
 python main.py

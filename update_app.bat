@@ -56,13 +56,18 @@ IF "%STASHED%"=="1" (
 
 echo.
 echo [2/3] Updating Python packages...
-IF NOT EXIST "venv_ucm_voice2text_python311\Scripts\activate.bat" (
-  echo [ERROR] Virtual environment not found: venv_ucm_voice2text_python311
-  set "FAILED=1"
-  goto :END
+IF NOT EXIST ".venv\Scripts\activate.bat" (
+  echo [INFO] Virtual environment not found. Creating .venv with Python...
+  python -m venv .venv
+  IF ERRORLEVEL 1 (
+    echo [ERROR] Failed to create virtual environment. Make sure Python is installed.
+    set "FAILED=1"
+    goto :END
+  )
+  echo [INFO] Virtual environment created successfully.
 )
 
-call venv_ucm_voice2text_python311\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 IF ERRORLEVEL 1 (
   echo [ERROR] Failed to activate virtual environment.
   set "FAILED=1"
