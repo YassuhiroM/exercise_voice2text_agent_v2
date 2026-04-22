@@ -8,7 +8,7 @@ from faster_whisper import WhisperModel
 class Transcriber:
     def __init__(
         self,
-        model_size: str = "base",          # ✅ was "tiny"
+        model_size: str = "small",
         device: str = "cpu",
         compute_type: str = "int8",
         keep_model_loaded: bool = True,
@@ -40,7 +40,7 @@ class Transcriber:
             vad_filter=True,
             language=self.language,
             task=self.task,
-            condition_on_previous_text=False,   # ✅ reduces drift
+            condition_on_previous_text=True,
         )
 
         # Optional debug (keep while tuning)

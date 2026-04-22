@@ -71,8 +71,8 @@ class VoiceFlowOrchestrator:
         self._ignore_start_until: float = 0.0  # monotonic seconds
 
         # ---- heuristics ----
-        self._min_words_for_rewrite = 7          # skip rewrite for very short text
-        self._min_overlap_ratio = 0.35           # if rewrite diverges too much, fallback to raw
+        self._min_words_for_rewrite = 3          # skip rewrite only for very short clips
+        self._min_overlap_ratio = 0.15           # ASR rewrites can change many words legitimately
 
     # ---------------------------------------------------------------------
     # Public API (keeps compatibility with your existing main.py)
