@@ -1,16 +1,24 @@
 """Entry point: global push-to-talk (Ctrl+Alt+Space) + ESC to exit (Windows)."""
 
 import threading
-from pynput import keyboard
+
+import keyboard
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from core.orchestrator import VoiceFlowOrchestrator
 
-# If run_agent.bat already prints instructions, set this to False
 SHOW_STARTUP_HELP = False
+HOTKEY_COMBO = "ctrl+alt+space"
 HOTKEY_LABEL = "CTRL + ALT + SPACE"
+
+# Keys whose release signals the end of a push-to-talk session
+_COMBO_RELEASE_KEYS = frozenset([
+    "ctrl", "left ctrl", "right ctrl",
+    "alt", "left alt", "right alt",
+    "space",
+])
 
 STARTUP_HELP = f"""\
 Voice2Text Agent
@@ -28,68 +36,59 @@ Exit:
 
 class GlobalHotkeyController:
     """
-    Push-to-talk semantics:
-      - On first detection of Ctrl+Alt+Space being held -> start (toggle)
-      - When any of Ctrl/Alt/Space is released while active -> stop/process (toggle)
+    Push-to-talk semantics using the 'keyboard' package with hotkey suppression.
+
+    The Ctrl+Alt+Space combo is registered with suppress=True so it is consumed
+    by this app and never forwarded to Windows or other applications (which was
+    the root cause of the Explorer 'no app associated' dialog).
+
+      - All three keys held  → start recording (toggle)
+      - Any combo key released → stop / process (toggle)
     """
 
     def __init__(self, orchestrator: VoiceFlowOrchestrator) -> None:
         self.orchestrator = orchestrator
-        self._pressed = set()
         self._combo_down = False
         self._lock = threading.Lock()
 
-    def _combo_pressed(self) -> bool:
-        ctrl = (keyboard.Key.ctrl_l in self._pressed) or (keyboard.Key.ctrl_r in self._pressed)
-        alt = (keyboard.Key.alt_l in self._pressed) or (keyboard.Key.alt_r in self._pressed)
-        space = keyboard.Key.space in self._pressed
-        return ctrl and alt and space
-
-    def _start_async_toggle(self):
-        # Avoid long work in the pynput callback thread
+    def _start_async_toggle(self) -> None:
         threading.Thread(target=self.orchestrator.toggle, daemon=True).start()
 
-    def on_press(self, key):
-        # ESC to exit cleanly
-        if key == keyboard.Key.esc:
-            print("\n[EXIT] Closing Voice2Text Agent...")
-            return False  # Stops listener (pynput convention)
-
+    def on_hotkey_press(self) -> None:
+        """Called by keyboard.add_hotkey when Ctrl+Alt+Space is fully pressed."""
         with self._lock:
-            self._pressed.add(key)
-
-            # Push-to-talk START: combo becomes true for the first time
-            if self._combo_pressed() and not self._combo_down:
+            if not self._combo_down:
                 self._combo_down = True
                 self._start_async_toggle()
 
-    def on_release(self, key):
+    def on_any_release(self, event: keyboard.KeyboardEvent) -> None:
+        """Called on every key release; only acts when a combo key is released."""
         with self._lock:
-            # Remove key first
-            self._pressed.discard(key)
-
-            # Push-to-talk STOP: if we were active and any combo key is released
-            if self._combo_down and key in (
-                keyboard.Key.ctrl_l, keyboard.Key.ctrl_r,
-                keyboard.Key.alt_l, keyboard.Key.alt_r,
-                keyboard.Key.space,
-            ):
+            if self._combo_down and event.name.lower() in _COMBO_RELEASE_KEYS:
                 self._combo_down = False
                 self._start_async_toggle()
 
 
-def main():
+def main() -> None:
     if SHOW_STARTUP_HELP:
         print(STARTUP_HELP)
 
     orchestrator = VoiceFlowOrchestrator()
     controller = GlobalHotkeyController(orchestrator)
 
-    # Keep this minimal to avoid conflicting instructions from the .bat
     print("Voice2Text Agent running (ESC to exit).")
 
-    with keyboard.Listener(on_press=controller.on_press, on_release=controller.on_release) as listener:
-        listener.join()
+    # suppress=True prevents Ctrl+Alt+Space from reaching Windows / Explorer,
+    # eliminating the 'no app associated' Explorer.EXE error dialogs.
+    keyboard.add_hotkey(HOTKEY_COMBO, controller.on_hotkey_press, suppress=True)
+    keyboard.on_release(controller.on_any_release)
+
+    keyboard.wait("esc")
+
+    if orchestrator.recorder.is_recording:
+        orchestrator.recorder.stop()
+
+    print("\n[EXIT] Closing Voice2Text Agent...")
 
 
 if __name__ == "__main__":

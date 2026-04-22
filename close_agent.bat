@@ -7,14 +7,8 @@ echo Stopping Voice2Text Agent...
 REM Kill the python process running main.py
 taskkill /F /FI "WINDOWTITLE eq Voice-to-Text Agent Launcher" /T >nul 2>&1
 
-REM Also kill any python process running main.py directly
-for /f "tokens=2" %%i in ('tasklist /FI "IMAGENAME eq python.exe" /FO LIST ^| findstr /i "PID"') do (
-  wmic process where "ProcessId=%%i" get CommandLine 2>nul | findstr /i "main.py" >nul
-  if not errorlevel 1 (
-    taskkill /F /PID %%i >nul 2>&1
-    echo Agent process (PID %%i) terminated.
-  )
-)
+REM Also kill any python process running main.py directly (uses Get-CimInstance, wmic is deprecated on Windows 11)
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'python.exe' -and $_.CommandLine -like '*main.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('Agent process (PID ' + $_.ProcessId + ') terminated.') }"
 
 echo Done.
 timeout /t 2 /nobreak >nul
