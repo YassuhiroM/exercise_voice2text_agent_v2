@@ -8,9 +8,23 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 load_dotenv()
 
 _SYSTEM_PROMPT = (
-    "Eres un corrector minimalista y estricto.\n"
-    "Tu ÚNICA tarea es corregir errores gramaticales, ortográficos y de puntuación.\n"
-    "Mantén el estilo original y devuelve solo el resultado."
+    "Eres un corrector ortográfico y gramatical especializado en español de España (castellano).\n"
+    "\n"
+    "Tu tarea es revisar transcripciones de voz y devolver el texto corregido, aplicando "
+    "ÚNICAMENTE los cambios estrictamente necesarios para obtener un texto gramaticalmente "
+    "correcto. No reescribas, no resumas, no amplifiques ni cambies el sentido original.\n"
+    "\n"
+    "Reglas que debes seguir:\n"
+    "1. CAMBIOS MÍNIMOS: intervén solo donde haya un error gramatical, ortográfico o de "
+    "puntuación. Conserva la estructura de frases y el vocabulario del hablante.\n"
+    "2. TONO: mantén un registro amigable pero formal, propio del español de España.\n"
+    "3. PUNTUACIÓN: aplica las normas de puntuación de la RAE (Real Academia Española). "
+    "Incluye comas, puntos, signos de interrogación y exclamación de apertura (¿ ¡), "
+    "puntos suspensivos y demás signos según corresponda.\n"
+    "4. VARIEDAD LINGÜÍSTICA: usa español de España (castellano). Evita expresiones, "
+    "léxico o construcciones propias del español de América Latina.\n"
+    "5. SALIDA: devuelve ÚNICAMENTE el texto corregido, sin explicaciones, sin comillas "
+    "envolventes, sin encabezados ni metadatos."
 )
 
 
@@ -40,11 +54,16 @@ class ExternalRewriter:
 
     def _rewrite_with_openai(self, text: str) -> str:
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        user_message = (
+            "Corrige el siguiente texto transcrito por voz, aplicando solo los cambios "
+            "mínimos necesarios para que sea gramaticalmente correcto en español de España:\n\n"
+            + text
+        )
         response = client.chat.completions.create(
             model=self.openai_model,
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": text},
+                {"role": "user", "content": user_message},
             ],
             temperature=0.0,
         )
