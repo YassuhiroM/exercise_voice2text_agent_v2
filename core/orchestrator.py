@@ -23,7 +23,8 @@ from pathlib import Path
 
 from core.audio_handler import Recorder
 from core.clipboard_paster import Paster
-from core.style_rewriter import StyleRewriter
+# from core.style_rewriter import StyleRewriter (included in 04/22/26)
+from core.external_rewriter import ExternalRewriter # new in 04/22/26
 from core.transcriber import Transcriber
 
 
@@ -56,7 +57,8 @@ class VoiceFlowOrchestrator:
     def __init__(self) -> None:
         self.recorder = Recorder()
         self.transcriber = Transcriber(keep_model_loaded=False)
-        self.rewriter = StyleRewriter(model_name="llama3.2:1b", timeout_seconds=10.0)
+        #self.rewriter = StyleRewriter(model_name="llama3.2:1b", timeout_seconds=10.0) 
+        self.rewriter = ExternalRewriter(timeout_seconds=10.0) # new in 04/22/26
         self.paster = Paster(paste_delay_seconds=0.1)
 
         # ---- state / concurrency guards ----

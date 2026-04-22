@@ -8,3 +8,9 @@ ollama>=0.3.3
 pyperclip>=1.9.0
 pyautogui>=0.9.54
 pytest>=8.2.0
+
+openai>=1.0
+python-dotenv>=1.0
+transformers>=4.36
+torch>=2.0
+sentencepiece>=0.1
